@@ -46,11 +46,13 @@
   <h2>File trên Releases</h2>
   <div id="relList"><div class="empty">⏳ Đang tải danh sách...</div></div>
 
-  <h2>File upload trên máy này</h2>
-  <div id="localList"><div class="empty">Chưa có file nào</div></div>
-  <label class="btn btn-copy" for="up">⬆️ Upload file</label>
-  <input type="file" id="up" multiple hidden />
-  <div class="empty" id="upStatus"></div>
+  <div id="ownerZone" class="hidden">
+    <h2>File upload trên máy này</h2>
+    <div id="localList"><div class="empty">Chưa có file nào</div></div>
+    <label class="btn btn-copy" for="up">⬆️ Upload file</label>
+    <input type="file" id="up" multiple hidden />
+    <div class="empty" id="upStatus"></div>
+  </div>
 
   <hr/>
 
@@ -62,7 +64,7 @@
     <a class="btn btn-primary" id="downloadBtn" href="#" download>⬇️ Download</a>
     <button class="btn-danger hidden" id="delBtn" onclick="delFile()">🗑 Xóa file này</button>
   </div>
-  <p class="note" id="detailNote">Chọn 1 file ở trên để hiện QR + nút tải.<br/>Chưa kết nối GitHub thì file upload chỉ lưu trong trình duyệt máy này.</p>
+  <p class="note" id="detailNote">Chọn 1 file ở trên để hiện QR + nút tải.<br/>Chỉ chủ web (đã kết nối GitHub) mới upload / xóa được file.</p>
 </div>
 
 <script>
@@ -117,6 +119,7 @@
     const on = !!token();
     b.textContent = on ? "🔑 Đã kết nối GitHub (bấm để ngắt)" : "🔑 Kết nối GitHub để upload lên Releases";
     b.classList.toggle("on", on);
+    document.getElementById("ownerZone").classList.toggle("hidden", !on);
   }
 
   // ---------- Luu file upload vao trinh duyet (khi chua co token) ----------
