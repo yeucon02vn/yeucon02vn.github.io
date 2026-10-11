@@ -3,93 +3,207 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Tải AutoTool-Friend v1.8</title>
+<title>Kho file AutoTool</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
   * { box-sizing: border-box; }
-  body { font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-  .card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 28px; max-width: 460px; width: 100%; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,.4); }
-  h1 { margin: 0 0 6px; font-size: 22px; }
-  p.sub { color: #94a3b8; margin: 0 0 18px; font-size: 14px; }
-  .filebox { background: #0f172a; border: 1px dashed #475569; border-radius: 10px; padding: 12px; font-size: 13px; margin-bottom: 18px; word-break: break-all; }
-  input[type=password], input[type=text] { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 15px; }
-  button, a.btn { display: inline-block; width: 100%; margin-top: 12px; padding: 13px; border-radius: 10px; border: 0; font-size: 16px; font-weight: 600; cursor: pointer; text-decoration: none; }
+  body { font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 20px; }
+  .card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 24px; max-width: 560px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,.4); }
+  h1 { margin: 0 0 4px; font-size: 22px; text-align: center; }
+  p.sub { color: #94a3b8; margin: 0 0 16px; font-size: 14px; text-align: center; }
+  h2 { font-size: 14px; color: #94a3b8; margin: 16px 0 8px; text-transform: uppercase; letter-spacing: .5px; }
+  .fileitem { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; font-size: 14px; }
+  .fileitem:hover { border-color: #22c55e; }
+  .fileitem.active { border-color: #22c55e; background: #052e16; }
+  .fileitem .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fileitem .sz { color: #94a3b8; font-size: 12px; white-space: nowrap; }
+  .badge { font-size: 11px; background: #334155; border-radius: 6px; padding: 2px 7px; white-space: nowrap; }
+  .badge.local { background: #7c3aed; }
+  .empty { color: #64748b; font-size: 13px; text-align: center; padding: 8px; }
+  hr { border: 0; border-top: 1px solid #334155; margin: 18px 0; }
+  .filebox { background: #0f172a; border: 1px dashed #475569; border-radius: 10px; padding: 12px; font-size: 13px; margin-bottom: 6px; word-break: break-all; text-align: center; }
+  button, a.btn, label.btn { display: inline-block; width: 100%; margin-top: 12px; padding: 13px; border-radius: 10px; border: 0; font-size: 15px; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; }
   .btn-primary { background: #22c55e; color: #052e16; }
   .btn-primary:hover { background: #16a34a; color: #fff; }
   .btn-copy { background: #334155; color: #fff; font-size: 14px; }
-  #qrcode { background: #fff; padding: 12px; border-radius: 12px; display: inline-block; margin: 16px 0 6px; }
+  .btn-danger { background: transparent; border: 1px solid #7f1d1d; color: #f87171; font-size: 13px; padding: 9px; }
+  #qrcode { background: #fff; padding: 12px; border-radius: 12px; display: block; width: fit-content; margin: 16px auto 6px; }
   #qrcode img, #qrcode canvas { display: block; }
-  .url { font-size: 12px; color: #94a3b8; word-break: break-all; margin-top: 8px; }
+  .url { font-size: 12px; color: #94a3b8; word-break: break-all; margin-top: 8px; text-align: center; }
+  .note { font-size: 12px; color: #64748b; margin-top: 16px; text-align: center; }
   .hidden { display: none; }
-  .note { font-size: 12px; color: #64748b; margin-top: 16px; }
-  .err { color: #f87171; font-size: 13px; margin-top: 8px; min-height: 18px; }
 </style>
 </head>
 <body>
 <div class="card">
-  <h1>📦 AutoTool-Friend v1.8</h1>
-  <p class="sub">Quét QR hoặc bấm nút để tải file</p>
+  <h1>📦 Kho file AutoTool</h1>
+  <p class="sub">Bấm vào file để lấy QR / tải xuống</p>
 
-  <div id="main">
-    <div class="filebox" id="fileinfo">Đang tải thông tin file...</div>
+  <h2>File trên Releases</h2>
+  <div id="relList"><div class="empty">⏳ Đang tải danh sách...</div></div>
+
+  <h2>File upload trên máy này</h2>
+  <div id="localList"><div class="empty">Chưa có file nào</div></div>
+  <label class="btn btn-copy" for="up">⬆️ Upload file (lưu trên máy này)</label>
+  <input type="file" id="up" multiple hidden />
+
+  <hr/>
+
+  <div id="detail" class="hidden">
+    <div class="filebox" id="fileinfo"></div>
     <div id="qrcode"></div>
     <div class="url" id="fileurl"></div>
-    <button class="btn-copy" onclick="copyLink()">📋 Copy link tải</button>
-    <a class="btn btn-primary" id="downloadBtn" href="#" download>⬇️ Download file Zip</a>
-    <p class="note">Quét QR bằng điện thoại để tải.</p>
+    <button class="btn-copy" onclick="copyLink()">📋 Copy link</button>
+    <a class="btn btn-primary" id="downloadBtn" href="#" download>⬇️ Download</a>
+    <button class="btn-danger hidden" id="delBtn" onclick="delLocal()">🗑 Xóa file này khỏi máy</button>
   </div>
+  <p class="note" id="detailNote">Chọn 1 file ở trên để hiện QR + nút tải.<br/>File upload chỉ lưu trong trình duyệt máy này — muốn quét QR bằng điện thoại thì up file lên Releases.</p>
 </div>
 
 <script>
-  // ===== CẤU HÌNH =====
-  // Link file TU DONG lay tu Release moi nhat cua repo (qua GitHub API),
-  // ra ban moi chi can up Release, khong can sua web.
-  // Muon khoa cung 1 ban cu the thi dan URL vao FILE_URL.
+  // Repo lay danh sach file tu muc Assets cua cac Release
   const REPO = "yeucon02vn/yeucon02vn.github.io";
-  const FILE_URL = "";
-  const FILE_SIZE_TEXT = "26.3 MB";
-  // ====================
+  let files = [];
+  let selectedId = null;
 
-  function cfg(v) { return (v && v.indexOf("__") !== 0) ? v : ""; }
-
-  async function getFile() {
-    if (cfg(FILE_URL)) return { url: FILE_URL, name: "AutoTool-Friend-v1.8.zip" };
-    try {
-      const r = await fetch("https://api.github.com/repos/" + REPO + "/releases/latest");
-      if (!r.ok) throw 0;
-      const j = await r.json();
-      const assets = j.assets || [];
-      const a = assets.find(function(x){ return /\.zip$/i.test(x.name); }) || assets[0];
-      if (a) return { url: a.browser_download_url, name: a.name, size: a.size };
-    } catch (e) {}
-    const base = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
-    return { url: base + "AutoTool-Friend-v1.8.zip", name: "AutoTool-Friend-v1.8.zip" };
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function fmtSize(b) {
+    if (b == null) return "";
+    if (b < 1048576) return Math.max(1, Math.round(b / 1024)) + " KB";
+    return (b / 1048576).toFixed(1) + " MB";
   }
 
-  async function showDownload() {
-    document.getElementById('fileinfo').textContent = '⏳ Đang lấy link tải mới nhất...';
-    const f = await getFile();
-    const sizeText = f.size ? (f.size / 1048576).toFixed(1) + ' MB' : FILE_SIZE_TEXT;
-    document.getElementById('fileinfo').innerHTML = '📁 ' + f.name + '<br/>Dung lượng: ' + sizeText;
-    document.getElementById('fileurl').textContent = f.url;
-    const btn = document.getElementById('downloadBtn');
-    btn.href = f.url;
-    btn.setAttribute('download', f.name);
-    document.getElementById('qrcode').innerHTML = '';
-    new QRCode(document.getElementById('qrcode'), {
-      text: f.url,
-      width: 220,
-      height: 220,
-      correctLevel: QRCode.CorrectLevel.M
+  // ---------- Luu file upload vao trinh duyet (IndexedDB) ----------
+  function idb() {
+    return new Promise(function(res, rej) {
+      const q = indexedDB.open("filekho", 1);
+      q.onupgradeneeded = function() { q.result.createObjectStore("files", { keyPath: "id" }); };
+      q.onsuccess = function() { res(q.result); };
+      q.onerror = function() { rej(q.error); };
+    });
+  }
+  async function idbAll() {
+    const db = await idb();
+    return new Promise(function(res, rej) {
+      const q = db.transaction("files").objectStore("files").getAll();
+      q.onsuccess = function() { res(q.result || []); };
+      q.onerror = function() { rej(q.error); };
+    });
+  }
+  async function idbPut(rec) {
+    const db = await idb();
+    return new Promise(function(res, rej) {
+      const q = db.transaction("files", "readwrite").objectStore("files").put(rec);
+      q.onsuccess = function() { res(); };
+      q.onerror = function() { rej(q.error); };
+    });
+  }
+  async function idbDel(id) {
+    const db = await idb();
+    return new Promise(function(res, rej) {
+      const q = db.transaction("files", "readwrite").objectStore("files").delete(id);
+      q.onsuccess = function() { res(); };
+      q.onerror = function() { rej(q.error); };
     });
   }
 
-  function copyLink() {
-    const t = document.getElementById('fileurl').textContent;
-    navigator.clipboard.writeText(t).then(function(){ alert('Đã copy link!'); });
+  // ---------- Nap danh sach ----------
+  async function load() {
+    const rel = [];
+    try {
+      const r = await fetch("https://api.github.com/repos/" + REPO + "/releases?per_page=100");
+      if (r.ok) {
+        const js = await r.json();
+        js.forEach(function(rl) {
+          (rl.assets || []).forEach(function(a) {
+            rel.push({ id: "rel-" + a.id, name: a.name, size: a.size, url: a.browser_download_url, tag: rl.tag_name, local: false });
+          });
+        });
+      }
+    } catch (e) {}
+    let local = [];
+    try {
+      const recs = await idbAll();
+      local = recs.map(function(x) {
+        return { id: x.id, name: x.name, size: x.size, url: URL.createObjectURL(x.blob), tag: "máy này", local: true };
+      });
+    } catch (e) {}
+    files = rel.concat(local);
+    renderLists();
+    if (files.length && !files.some(function(f){ return f.id === selectedId; })) {
+      select(files[0].id);
+    } else if (!files.length) {
+      document.getElementById("detail").classList.add("hidden");
+    }
   }
 
-  showDownload();
+  function renderLists() {
+    const rel = files.filter(function(f){ return !f.local; });
+    const loc = files.filter(function(f){ return f.local; });
+    document.getElementById("relList").innerHTML = rel.length
+      ? rel.map(itemHtml).join("")
+      : '<div class="empty">Chưa có file nào trên Releases</div>';
+    document.getElementById("localList").innerHTML = loc.length
+      ? loc.map(itemHtml).join("")
+      : '<div class="empty">Chưa có file nào</div>';
+  }
+
+  function itemHtml(f) {
+    return '<button class="fileitem' + (f.id === selectedId ? " active" : "") + '" onclick="select(\'' + f.id + '\')">'
+      + '<span class="nm">📁 ' + esc(f.name) + '</span>'
+      + '<span class="sz">' + esc(fmtSize(f.size)) + '</span>'
+      + '<span class="badge' + (f.local ? " local" : "") + '">' + esc(f.tag) + '</span>'
+      + '</button>';
+  }
+
+  function select(id) {
+    selectedId = id;
+    const f = files.find(function(x){ return x.id === id; });
+    if (!f) return;
+    renderLists();
+    document.getElementById("detail").classList.remove("hidden");
+    document.getElementById("detailNote").classList.add("hidden");
+    document.getElementById("fileinfo").innerHTML = "📁 " + esc(f.name) + "<br/>Dung lượng: " + esc(fmtSize(f.size)) + (f.local ? "" : "<br/>Bản: " + esc(f.tag));
+    document.getElementById("fileurl").textContent = f.url;
+    const btn = document.getElementById("downloadBtn");
+    btn.href = f.url;
+    btn.setAttribute("download", f.name);
+    document.getElementById("qrcode").innerHTML = "";
+    new QRCode(document.getElementById("qrcode"), { text: f.url, width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
+    document.getElementById("delBtn").classList.toggle("hidden", !f.local);
+  }
+
+  function copyLink() {
+    const t = document.getElementById("fileurl").textContent;
+    navigator.clipboard.writeText(t).then(function(){ alert("Đã copy link!"); });
+  }
+
+  async function delLocal() {
+    if (!selectedId || !confirm("Xóa file này khỏi máy?")) return;
+    const f = files.find(function(x){ return x.id === selectedId; });
+    if (f && f.url.indexOf("blob:") === 0) URL.revokeObjectURL(f.url);
+    await idbDel(selectedId);
+    selectedId = null;
+    document.getElementById("detail").classList.add("hidden");
+    document.getElementById("detailNote").classList.remove("hidden");
+    load();
+  }
+
+  document.getElementById("up").addEventListener("change", async function(e) {
+    const list = Array.from(e.target.files || []);
+    for (let i = 0; i < list.length; i++) {
+      const fl = list[i];
+      await idbPut({ id: "local-" + Date.now() + "-" + i, name: fl.name, size: fl.size, blob: fl });
+    }
+    e.target.value = "";
+    await load();
+    const loc = files.filter(function(f){ return f.local; });
+    if (loc.length) select(loc[loc.length - 1].id);
+  });
+
+  load();
 </script>
 </body>
 </html>
