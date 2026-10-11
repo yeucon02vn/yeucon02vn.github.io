@@ -1,0 +1,62 @@
+name: Deploy site to Pages
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      APP_PASSWORD: ${{ secrets.APP_PASSWORD != '' && secrets.APP_PASSWORD || vars.APP_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Inject APP_PASSWORD
+        run: |
+          if [ -z "$APP_PASSWORD" ]; then
+            echo "::error::Missing APP_PASSWORD (add it under repo Settings > Secrets and variables, as a Secret or a Variable)"
+            exit 1
+          fi
+          python3 - <<'EOF'
+          import os
+          p = 'index.html'
+          s = open(p, encoding='utf-8').read()
+          assert '__APP_PASSWORD__' in s, 'placeholder not found'
+          s = s.replace('__APP_PASSWORD__', os.environ['APP_PASSWORD'])
+          open(p, 'w', encoding='utf-8').write(s)
+          EOF
+          if grep -q '__APP_PASSWORD__' index.html; then
+            echo "::error::Placeholder was not replaced"
+            exit 1
+          fi
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
