@@ -10,7 +10,10 @@
   body { font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 20px; }
   .card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 24px; max-width: 560px; width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,.4); }
   h1 { margin: 0 0 4px; font-size: 22px; text-align: center; }
-  p.sub { color: #94a3b8; margin: 0 0 16px; font-size: 14px; text-align: center; }
+  p.sub { color: #94a3b8; margin: 0 0 12px; font-size: 14px; text-align: center; }
+  .ownerrow { text-align: center; margin-bottom: 6px; }
+  .ownerrow button { background: transparent; border: 1px solid #475569; color: #94a3b8; border-radius: 8px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  .ownerrow button.on { border-color: #22c55e; color: #22c55e; }
   h2 { font-size: 14px; color: #94a3b8; margin: 16px 0 8px; text-transform: uppercase; letter-spacing: .5px; }
   .fileitem { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; font-size: 14px; }
   .fileitem:hover { border-color: #22c55e; }
@@ -38,14 +41,16 @@
 <div class="card">
   <h1>📦 Kho file AutoTool</h1>
   <p class="sub">Bấm vào file để lấy QR / tải xuống</p>
+  <div class="ownerrow"><button id="tokBtn" onclick="tokToggle()">🔑 Kết nối GitHub để upload lên Releases</button></div>
 
   <h2>File trên Releases</h2>
   <div id="relList"><div class="empty">⏳ Đang tải danh sách...</div></div>
 
   <h2>File upload trên máy này</h2>
   <div id="localList"><div class="empty">Chưa có file nào</div></div>
-  <label class="btn btn-copy" for="up">⬆️ Upload file (lưu trên máy này)</label>
+  <label class="btn btn-copy" for="up">⬆️ Upload file</label>
   <input type="file" id="up" multiple hidden />
+  <div class="empty" id="upStatus"></div>
 
   <hr/>
 
@@ -55,14 +60,16 @@
     <div class="url" id="fileurl"></div>
     <button class="btn-copy" onclick="copyLink()">📋 Copy link</button>
     <a class="btn btn-primary" id="downloadBtn" href="#" download>⬇️ Download</a>
-    <button class="btn-danger hidden" id="delBtn" onclick="delLocal()">🗑 Xóa file này khỏi máy</button>
+    <button class="btn-danger hidden" id="delBtn" onclick="delFile()">🗑 Xóa file này</button>
   </div>
-  <p class="note" id="detailNote">Chọn 1 file ở trên để hiện QR + nút tải.<br/>File upload chỉ lưu trong trình duyệt máy này — muốn quét QR bằng điện thoại thì up file lên Releases.</p>
+  <p class="note" id="detailNote">Chọn 1 file ở trên để hiện QR + nút tải.<br/>Chưa kết nối GitHub thì file upload chỉ lưu trong trình duyệt máy này.</p>
 </div>
 
 <script>
-  // Repo lay danh sach file tu muc Assets cua cac Release
+  // Repo lay danh sach file tu muc Assets cua cac Release.
+  // Upload thang len Releases can token (chi chu web nhap tren may minh).
   const REPO = "yeucon02vn/yeucon02vn.github.io";
+  const STORE_TAG = "kho-file";
   let files = [];
   let selectedId = null;
 
@@ -74,8 +81,45 @@
     if (b < 1048576) return Math.max(1, Math.round(b / 1024)) + " KB";
     return (b / 1048576).toFixed(1) + " MB";
   }
+  function token() { return localStorage.getItem("gh_token") || ""; }
 
-  // ---------- Luu file upload vao trinh duyet (IndexedDB) ----------
+  async function api(path, opts) {
+    opts = opts || {};
+    opts.headers = Object.assign({ "Accept": "application/vnd.github+json" }, opts.headers || {});
+    const t = token();
+    if (t) opts.headers["Authorization"] = "Bearer " + t;
+    return fetch("https://api.github.com" + path, opts);
+  }
+
+  // ---------- Owner: nhap / xoa token ----------
+  async function tokToggle() {
+    if (token()) {
+      if (!confirm("Ngắt kết nối GitHub trên máy này?")) return;
+      localStorage.removeItem("gh_token");
+      paintTok();
+      return;
+    }
+    const t = prompt("Dán GitHub token (Settings > Developer settings > Personal access tokens).\nToken cần quyền Contents read+write cho repo này.\nChỉ nhập trên máy của bạn:");
+    if (!t) return;
+    localStorage.setItem("gh_token", t.trim());
+    try {
+      const r = await api("/repos/" + REPO);
+      if (!r.ok) throw 0;
+      alert("Kết nối thành công! Giờ upload sẽ đẩy thẳng lên Releases.");
+    } catch (e) {
+      localStorage.removeItem("gh_token");
+      alert("Token không dùng được, kiểm tra lại quyền.");
+    }
+    paintTok();
+  }
+  function paintTok() {
+    const b = document.getElementById("tokBtn");
+    const on = !!token();
+    b.textContent = on ? "🔑 Đã kết nối GitHub (bấm để ngắt)" : "🔑 Kết nối GitHub để upload lên Releases";
+    b.classList.toggle("on", on);
+  }
+
+  // ---------- Luu file upload vao trinh duyet (khi chua co token) ----------
   function idb() {
     return new Promise(function(res, rej) {
       const q = indexedDB.open("filekho", 1);
@@ -118,7 +162,7 @@
         const js = await r.json();
         js.forEach(function(rl) {
           (rl.assets || []).forEach(function(a) {
-            rel.push({ id: "rel-" + a.id, name: a.name, size: a.size, url: a.browser_download_url, tag: rl.tag_name, local: false });
+            rel.push({ id: "rel-" + a.id, assetId: a.id, name: a.name, size: a.size, url: a.browser_download_url, tag: rl.tag_name, local: false });
           });
         });
       }
@@ -172,7 +216,7 @@
     btn.setAttribute("download", f.name);
     document.getElementById("qrcode").innerHTML = "";
     new QRCode(document.getElementById("qrcode"), { text: f.url, width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M });
-    document.getElementById("delBtn").classList.toggle("hidden", !f.local);
+    document.getElementById("delBtn").classList.toggle("hidden", !(f.local || token()));
   }
 
   function copyLink() {
@@ -180,29 +224,98 @@
     navigator.clipboard.writeText(t).then(function(){ alert("Đã copy link!"); });
   }
 
-  async function delLocal() {
-    if (!selectedId || !confirm("Xóa file này khỏi máy?")) return;
+  async function delFile() {
     const f = files.find(function(x){ return x.id === selectedId; });
-    if (f && f.url.indexOf("blob:") === 0) URL.revokeObjectURL(f.url);
-    await idbDel(selectedId);
+    if (!f || !confirm("Xóa file \"" + f.name + "\"?")) return;
+    if (f.local) {
+      if (f.url.indexOf("blob:") === 0) URL.revokeObjectURL(f.url);
+      await idbDel(f.id);
+    } else {
+      const r = await api("/repos/" + REPO + "/releases/assets/" + f.assetId, { method: "DELETE" });
+      if (!r.ok) { alert("Xóa thất bại, kiểm tra token."); return; }
+    }
     selectedId = null;
     document.getElementById("detail").classList.add("hidden");
     document.getElementById("detailNote").classList.remove("hidden");
     load();
   }
 
+  // ---------- Upload thang len Releases (can token) ----------
+  async function ensureRelease() {
+    let r = await api("/repos/" + REPO + "/releases/tags/" + STORE_TAG);
+    if (r.ok) return r.json();
+    r = await api("/repos/" + REPO + "/releases", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tag_name: STORE_TAG, name: "Kho file" })
+    });
+    if (!r.ok) throw new Error("Không tạo được release");
+    return r.json();
+  }
+
+  function uploadAsset(uploadUrl, file, onprog) {
+    return new Promise(function(res, rej) {
+      const url = uploadUrl.split("{")[0] + "?name=" + encodeURIComponent(file.name);
+      const x = new XMLHttpRequest();
+      x.open("POST", url);
+      x.setRequestHeader("Authorization", "Bearer " + token());
+      x.setRequestHeader("Content-Type", "application/octet-stream");
+      x.upload.onprogress = function(e) { if (e.lengthComputable) onprog(Math.round(e.loaded / e.total * 100)); };
+      x.onload = function() {
+        if (x.status < 300) { try { res(JSON.parse(x.responseText)); } catch (e) { rej(new Error("Lỗi server")); } }
+        else rej(new Error(x.status + " " + x.responseText));
+      };
+      x.onerror = function() { rej(new Error("Lỗi mạng")); };
+      x.send(file);
+    });
+  }
+
+  async function uploadToRelease(file, onprog) {
+    const rel = await ensureRelease();
+    try {
+      return await uploadAsset(rel.upload_url, file, onprog);
+    } catch (e) {
+      if (String(e.message).indexOf("already_exists") === -1) throw e;
+      const r = await api("/repos/" + REPO + "/releases/" + rel.id + "/assets?per_page=100");
+      const js = await r.json();
+      const same = (js || []).find(function(a){ return a.name === file.name; });
+      if (same) await api("/repos/" + REPO + "/releases/assets/" + same.id, { method: "DELETE" });
+      return await uploadAsset(rel.upload_url, file, onprog);
+    }
+  }
+
+  function upStatus(t) { document.getElementById("upStatus").textContent = t; }
+
   document.getElementById("up").addEventListener("change", async function(e) {
     const list = Array.from(e.target.files || []);
-    for (let i = 0; i < list.length; i++) {
-      const fl = list[i];
-      await idbPut({ id: "local-" + Date.now() + "-" + i, name: fl.name, size: fl.size, blob: fl });
-    }
     e.target.value = "";
-    await load();
-    const loc = files.filter(function(f){ return f.local; });
-    if (loc.length) select(loc[loc.length - 1].id);
+    if (!list.length) return;
+    if (token()) {
+      for (let i = 0; i < list.length; i++) {
+        const fl = list[i];
+        try {
+          upStatus("⏳ Đang upload " + fl.name + "... 0%");
+          await uploadToRelease(fl, function(p) { upStatus("⏳ Đang upload " + fl.name + "... " + p + "%"); });
+        } catch (err) {
+          upStatus("❌ " + fl.name + ": " + err.message);
+          return;
+        }
+      }
+      upStatus("✅ Upload xong!");
+      await load();
+      setTimeout(function(){ upStatus(""); }, 3000);
+    } else {
+      for (let i = 0; i < list.length; i++) {
+        const fl = list[i];
+        await idbPut({ id: "local-" + Date.now() + "-" + i, name: fl.name, size: fl.size, blob: fl });
+      }
+      await load();
+      const loc = files.filter(function(f){ return f.local; });
+      if (loc.length) select(loc[loc.length - 1].id);
+    }
   });
 
+  paintTok();
   load();
 </script>
 </body>
