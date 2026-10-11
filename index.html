@@ -35,7 +35,7 @@
     <input type="password" id="pw" placeholder="Nhập mật khẩu để tải" />
     <button class="btn-primary" onclick="unlock()">Mở khóa</button>
     <div class="err" id="err"></div>
-    <p class="note">Mật khẩu mặc định: <b>friend2026</b> (đổi trong source code)</p>
+    <p class="note">Vui lòng nhập mật khẩu để tiếp tục</p>
   </div>
 
   <div id="main" class="hidden">
@@ -49,17 +49,21 @@
 </div>
 
 <script>
-  // ===== CẤU HÌNH - BẠN ĐỔI Ở ĐÂY =====
-  const DOWNLOAD_PASSWORD = "friend2026";
+  // ===== CẤU HÌNH - MẬT KHẨU LẤY TỪ SECRETS LÚC BUILD, KHÔNG GHI CỨNG Ở ĐÂY =====
+  // GitHub: Settings > Secrets and variables > Actions > New secret: APP_PASSWORD
+  // Lúc deploy, workflow tự thay __APP_PASSWORD__ bằng secret. Chạy local thì tự điền tay.
+  const DOWNLOAD_PASSWORD = "__APP_PASSWORD__";
   const FILE_NAME = "AutoTool-Friend-v1.8-ong15s-tenyen17s  ban 6-10.zip";
   const FILE_SIZE_TEXT = "26.3 MB";
-  // Dán link Releases vào đây sau khi up Zip lên Releases, ví dụ:
-  // const FILE_URL = "https://github.com/<ten-ban>/autotool-friend/releases/download/v1.8/AutoTool-Friend-v1.8.zip";
-  const FILE_URL = "";
+  // Link file: dán trực tiếp vào FILE_URL, hoặc để __FILE_URL__ để workflow thay bằng secret FILE_URL.
+  // Ví dụ: "https://github.com/yeucon02vn/Autotool-Friend/releases/download/v1.8/AutoTool-Friend-v1.8.zip";
+  const FILE_URL = "__FILE_URL__";
   // ====================================
 
+  function cfg(v) { return (v && v.indexOf("__") !== 0) ? v : ""; }
+
   function getFileUrl() {
-    if (FILE_URL) return FILE_URL;
+    if (cfg(FILE_URL)) return FILE_URL;
     const base = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
     return base + encodeURIComponent(FILE_NAME);
   }
@@ -83,7 +87,7 @@
     document.getElementById('fileinfo').innerHTML = '📁 ' + FILE_NAME + '<br/>Dung lượng: ' + FILE_SIZE_TEXT;
     document.getElementById('fileurl').textContent = url;
     const btn = document.getElementById('downloadBtn');
-    btn.href = FILE_URL ? FILE_URL : './' + encodeURIComponent(FILE_NAME);
+    btn.href = cfg(FILE_URL) ? FILE_URL : './' + encodeURIComponent(FILE_NAME);
     btn.setAttribute('download', FILE_NAME);
     document.getElementById('qrcode').innerHTML = '';
     new QRCode(document.getElementById('qrcode'), {
